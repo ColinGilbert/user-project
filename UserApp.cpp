@@ -31,7 +31,7 @@ bool noob::application::user_init()
 	noob::globals& g = noob::get_globals();
 
 	const noob::shape_handle scenery_shp = g.sphere_shape(50.0); // g.box_shape(50.0, 20.0, 50.0);
-	const noob::scenery_handle sc_h = stage.scenery(scenery_shp, noob::vec3f(0.0, 0.0, 0.0), noob::versorf(0.0, 0.0, 0.0, 1.0));//versor_from_axis_rad(0.0, 0.0, 0.0, 1.0)); // 0 rad rotation, facing up
+	const noob::scenery_handle sc_h = stage.scenery(scenery_shp, noob::vec3f(0.0, 0.0, 0.0), noob::versorf(0.0, 0.0, 0.0, 1.0));
 
 	noob::reflectance r;
 	r.set_specular(noob::vec3f(0.1, 0.1, 0.1));
@@ -46,7 +46,7 @@ bool noob::application::user_init()
 	const float actor_dims = 2.0;
 	// const noob::shape_handle shp = g.sphere_shape(actor_dims);
 	
-	const noob::shape_handle actor_shp = g.sphere_shape(actor_dims);//box_shape(actor_dims, actor_dims, actor_dims);
+	const noob::shape_handle actor_shp = g.sphere_shape(actor_dims);
 
 	const uint32_t actor_count = 50;
 
@@ -66,7 +66,7 @@ bool noob::application::user_init()
 	{	
 		ah = stage.actor(bph, 0, random_vec3(stage_dim, stage_dim, stage_dim), random_versor());
 	}
-	
+/*	
 	for (uint32_t i = 0; i < actor_count; ++i)
 	{	
 		ah = stage.actor(bph, 1, random_vec3(stage_dim, stage_dim, -stage_dim), random_versor());
@@ -101,7 +101,7 @@ bool noob::application::user_init()
 	{	
 		ah = stage.actor(bph, 7, random_vec3(-stage_dim, -stage_dim, -stage_dim), random_versor());
 	}
-
+*/
 
 	// const noob::vec2d test_val = noob::vec2d(1.0, 0.7);
 	// uint32_t db_idx = db.vec2fp_add(test_val);
