@@ -2,29 +2,31 @@
 #include "Font.hpp"
 
 std::unique_ptr<std::string> message_profiling, message_collision;
+
 noob::actor_handle ah;
 
 noob::font example_font;
 
 std::string test_message;
 
+
 noob::vec3f random_vec3(float x, float y, float z)
 {
 	return noob::vec3f(noob::random::get() * x, noob::random::get() * y, noob::random::get() * z);
 }
+
 
 noob::versorf random_versor()
 {
 	return noob::normalize(noob::versorf(noob::random::get(), noob::random::get(), noob::random::get(), noob::random::get()));
 }
 
+
 bool noob::application::user_init()
 {
 	message_profiling = std::make_unique<std::string>("");
 	message_collision = std::make_unique<std::string>("");
 	noob::logger::log(noob::importance::INFO, "[Application] Begin user init!");
-
-
 
 	noob::globals& g = noob::get_globals();
 
@@ -107,9 +109,9 @@ bool noob::application::user_init()
 	// noob::logger::log(noob::importance::INFO, noob::concat("[Application] Inserted value: ", noob::to_string(test_val), ". Returned value: ", noob::to_string(ret_val), "."));
 
 	logger::log(noob::importance::INFO, "[Application] Successfully done (C++) user init.");
+
 	return true;
 }
-
 
 
 void noob::application::user_update(double dt)
