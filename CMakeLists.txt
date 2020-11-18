@@ -1,1 +1,1 @@
-list (APPEND main_src UserProject.cpp)
+list (APPEND main_src UserProject.cpp Funnel.cpp)
