@@ -6,10 +6,10 @@ std::string test_message;
 
 
 noob::actor_handle cannon_h;
-noob::versorf cannon_orientation = noob::versor_from_axis_deg<float>(90, 1, 0.4, 0.4);
+noob::versorf cannon_orientation = noob::versorf(0.0, 0.0, 0.0, 1.0);
 noob::prop_handle cannonball_h;
 
-
+noob::actor_handle big_red_button_h;
 
 noob::font example_font;
 
@@ -18,6 +18,9 @@ noob::scenery_handle wrecking_ball_fixed_to;
 
 noob::prop_blueprints_handle ball_bp_h;  
 noob::prop_blueprints ball_bp;
+
+
+std::vector<noob::actor_handle> rocket_actors;
 
 const size_t max_balls = 10;
 
@@ -110,7 +113,7 @@ void create_paddle_wheel(const noob::vec3f & pos, noob::stage & stage, noob::glo
 	hitter_bp.model = g.model_from_shape(hitter_bp.shape, 2);
 	hitter_bp.reflect = g.get_reflectance("default");
 	hitter_bp.ccd = true;
-	
+
 	noob::prop_blueprints_handle hitter_bp_h = stage.add_props_blueprints(hitter_bp);
 	stage.reserve_props(hitter_bp_h, 2);	
 
@@ -126,23 +129,23 @@ void create_paddle_wheel(const noob::vec3f & pos, noob::stage & stage, noob::glo
 	//	noob::constraint_handle hinge_h = stage.create_hinge_constraint(stage.get_body_handle(assembly_h), noob::vec3f(-100.0, 0, 0.0), noob::vec3f(0.0, 0.0, 1.0));
 
 	// Chain for pulling rocket's lid off :)
-			
+
 
 	//size_t chain_links_max = 50;
 
 	noob::actor_blueprints cannon_bp;
-	cannon_bp.bounds = g.cylinder_shape(10.0, 60.0, 12);
+	cannon_bp.bounds = g.cone_shape(10.0, 60.0, 12);
 	cannon_bp.model = g.model_from_shape(cannon_bp.bounds, 1);
 	cannon_bp.reflect = g.get_reflectance("default");
-	
+
 	noob::actor_blueprints_handle cannon_bp_h = stage.add_actor_blueprints(cannon_bp);
 	stage.reserve_actors(cannon_bp_h, 1);
-	cannon_h = stage.create_actor(cannon_bp_h, 0, pos + noob::vec3f(90.0, 0.0, -100.0), cannon_orientation);
+	cannon_h = stage.create_actor(cannon_bp_h, 0, pos + noob::vec3f(90.0, 0.0, -120.0), cannon_orientation);
 
 
-	// Boulder
+	// Cannonball
 	noob::prop_blueprints cannonball_bp;
-	cannonball_bp.mass = 100.0;
+	cannonball_bp.mass = 10.0;
 	cannonball_bp.shape = g.sphere_shape(10.0);
 	cannonball_bp.model = g.model_from_shape(cannonball_bp.shape, 1);
 	cannonball_bp.ccd = true;
@@ -150,57 +153,11 @@ void create_paddle_wheel(const noob::vec3f & pos, noob::stage & stage, noob::glo
 
 	noob::prop_blueprints_handle cannonball_bp_h = stage.add_props_blueprints(cannonball_bp);
 	stage.reserve_props(cannonball_bp_h, 1);
-	cannonball_h = stage.create_prop(cannonball_bp_h, 0, pos + noob::vec3f(115.0, 10.0, -145.0), noob::versorf(0.0, 0.0 ,0.0 ,1.0));
+	cannonball_h = stage.create_prop(cannonball_bp_h, 0, pos + noob::vec3f(125.0, 0.0, -155.0), noob::versorf(0.0, 0.0 ,0.0 ,1.0));
+	//stage.get_body(stage.get_prop(cannonball_h).body).toggle_active();
+
 }
 
-
-void create_wrecking_ball(const noob::vec3f &pos, size_t chain_length, noob::stage &stage_arg, noob::globals &g)
-{
-	noob::scenery_handle fixture_h = stage_arg.create_scenery(g.box_shape(1.0, 1.0, 1.0), pos, noob::versorf(0.0, 0.0, 0.0, 1.0));
-
-	noob::prop_blueprints chain_link_bp;
-	chain_link_bp.mass = 5.0;
-	chain_link_bp.shape = g.sphere_shape(0.4);
-	chain_link_bp.model = g.model_from_shape(chain_link_bp.shape, chain_length);
-	chain_link_bp.reflect = g.get_reflectance("default");
-	chain_link_bp.ccd = false;
-
-	noob::prop_blueprints_handle chain_link_h = stage_arg.add_props_blueprints(chain_link_bp);
-	stage_arg.reserve_props(chain_link_h, chain_length);
-	noob::body_handle last_bod = stage_arg.get_scenery(fixture_h).body;
-
-	float y_accum = pos.v[1];
-	for (uint32_t i = 0; i < chain_length; ++i)
-	{
-		y_accum -= 1.0;
-
-		noob::prop_handle ph = stage_arg.create_prop(chain_link_h, 0, noob::vec3f(pos.v[0], y_accum, pos.v[2]), noob::versorf(0.0, 0.0, 0.0, 1.0));
-
-		noob::body_handle current_bod = stage_arg.get_prop(ph).body;
-		//noob::constraint_handle twisty_h = stage.create_point_constraint(current_bod, last_bod, noob::identity_mat4<float>(), noob::identity_mat4<float>());
-
-		noob::constraint_handle twisty_h = stage_arg.create_point_constraint(current_bod, last_bod, noob::vec3f(0.0, -0.5, 0.0), noob::vec3f(0.0, 0.5, 0.0));
-
-		//noob::constraint twisty = stage.get_constraint(twisty_h);
-		last_bod = current_bod;
-	}
-
-	noob::shape_handle large_sphere_shp = g.sphere_shape(7.0);
-	noob::prop_blueprints wrecking_ball_bp;
-	wrecking_ball_bp.mass = 100.0;
-	wrecking_ball_bp.shape = large_sphere_shp;
-	wrecking_ball_bp.model = g.model_from_shape(large_sphere_shp, 1);
-	wrecking_ball_bp.reflect = g.get_reflectance("default");
-	wrecking_ball_bp.ccd= true;
-
-	auto wrecking_ball_bp_h = stage_arg.add_props_blueprints(wrecking_ball_bp);
-	stage_arg.reserve_props(wrecking_ball_bp_h, 1);
-
-	wrecking_ball_h = stage_arg.create_prop(wrecking_ball_bp_h, 0, noob::vec3f(200, -50, -100), noob::versorf(0.0, 0.0, 0.0, 1.0));
-	auto wrecking_ball_bod = stage_arg.get_prop(wrecking_ball_h).body;
-	//auto constrain_h = stage.create_conical_constraint(wrecking_ball_bod, last_bod, noob::translate(noob::identity_mat4<float>(), noob::vec3f(0.0, 7.0, 0.0)), noob::translate(noob::identity_mat4<float>(), noob::vec3f(0.0, -0.5, 0.0)));
-	auto constrain_h = stage_arg.create_point_constraint(wrecking_ball_bod, last_bod, noob::vec3f(0.0, 7.0, 0.0), noob::vec3f(0.0, -0.5, 0.0));
-}
 
 
 void create_slide(noob::stage &stage, noob::globals &g)
@@ -211,25 +168,20 @@ void create_slide(noob::stage &stage, noob::globals &g)
 	const float track_thickness = 2.0;
 	const float starting_z = -100.0;
 	const float track_length_1 = 200.0;
-	
+
 	const noob::vec3f pos_1(100.0, -10.0, starting_z);
 	const noob::versorf orient_1(0.0, 0.0, 0.0, 1.0);
 	stage.create_scenery(g.box_shape(track_length_1, track_thickness, track_width), pos_1 + noob::vec3f(0.0, 0.0, track_width * 0.5), orient_1);
 	stage.create_scenery(g.box_shape(track_length_1, rim_height, wall_thickness), pos_1 + noob::vec3f(0.0, rim_height * 0.5, track_width - wall_thickness * 0.5), orient_1);
 	stage.create_scenery(g.box_shape(track_length_1, rim_height, wall_thickness), pos_1 + noob::vec3f(0.0, rim_height * 0.5, wall_thickness * 0.5), orient_1);
-	
+
 	const float track_length_2 = 200.0;
 	const noob::vec3f pos_2(300.0, -20.0, starting_z); 
 	const noob::versorf orient_2 = noob::versor_from_axis_deg<float>(30.0, 0.0, 0.3, 0.0);
-	
+
 	wrecking_ball_fixed_to = stage.create_scenery(g.box_shape(track_length_2, track_thickness, track_width), pos_2 + noob::vec3f(0.0, 0.0, track_width * 0.5), orient_2);
 	stage.create_scenery(g.box_shape(track_length_2, rim_height, wall_thickness), pos_2 + noob::vec3f(0.0, track_thickness + rim_height*0.5, track_width - wall_thickness * 0.5), orient_2);
 	stage.create_scenery(g.box_shape(track_length_2, rim_height, wall_thickness), pos_2 + noob::vec3f(0.0, track_thickness + rim_height*0.5, wall_thickness * 0.5), orient_2);
-
-
-
-
-	
 }
 
 
@@ -272,122 +224,37 @@ void create_brick_wall(const noob::vec3f &pos, const noob::vec3f &brick_dims, fl
 	}
 }
 
-/*
-   void create_trebuchet(const noob::vec3f &pos, const noob::versorf &orient, noob::stage &stage, noob::globals &g)
-   {
-// Create frame
-// noob::scenery_handle base = stage.create_scenery(g.box_shape(10.0, 1.0, 100.0), noob::vec3f(0.0, 0.0, 0.0), noob::versorf(0.0, 0.0, 0.0, 1.0));
-noob::scenery_handle pivot_beam = stage.create_scenery(g.cylinder_shape(1.0, 1.0, 12), pos, orient);
-
-noob::prop_blueprints throwing_arm_bp;
-throwing_arm_bp.mass = 10.0;
-throwing_arm_bp.shape = g.box_shape(2.0, 2.0, 100.0);
-throwing_arm_bp.model = g.model_from_shape(throwing_arm_bp.shape, 1);
-throwing_arm_bp.reflect = g.get_reflectance("default");
-throwing_arm_bp.ccd = false;
-noob::prop_blueprints_handle throwing_arm_bp_h = stage.add_props_blueprints(throwing_arm_bp);
-stage.reserve_props(throwing_arm_bp_h, 1);
-const noob::prop_handle arm_h = stage.create_prop(throwing_arm_bp_h, 0, pos + noob::vec3f(0.0, 5.2, 30.0), orient * noob::versor_from_axis_deg<float>(90, 0.0, 1.0, 0.0));
-stage.get_body(stage.get_prop(arm_h).body).set_angular_factor(noob::vec3f(1.0, 0.0, 0.0));
-stage.get_body(stage.get_prop(arm_h).body).set_linear_factor(noob::vec3f(0.0, 0.0, 0.0));
-
-stage.create_hinge_constraint(stage.get_prop(arm_h).body, stage.get_scenery(pivot_beam).body, noob::vec3f(0.0, 0.0, 0.0), noob::vec3f(0.0, 0.0, 0.0), noob::vec3f(1.0, 1.0, 1.0), noob::vec3f(1.0, 1.0, 1.0));
-
-noob::prop_blueprints boulder_bp;
-boulder_bp.mass = 100.0;
-boulder_bp.shape = g.sphere_shape(5.0);
-boulder_bp.model = g.model_from_shape(boulder_bp.shape, 1);
-boulder_bp.reflect = g.get_reflectance("default");
-boulder_bp.ccd = false;
-noob::prop_blueprints_handle boulder_bp_h = stage.add_props_blueprints(boulder_bp);
-stage.reserve_props(boulder_bp_h, 1);
-const noob::prop_handle boulder_h = stage.create_prop(boulder_bp_h, 0, pos, orient);
-
-stage.create_point_constraint(stage.get_prop(arm_h).body, stage.get_prop(boulder_h).body, noob::vec3f(0.0, 0.0, 60.0), noob::vec3f(0.0, 0.0, 0.0));	
-
-
-noob::scenery_handle rotator_target_h = stage.create_scenery(g.box_shape(1.0, 1.0, 1.0), noob::vec3f(0.0, -50.0, 20.0), noob::versorf(0.0, 0.0, 0.0, 1.0));
-
-
-stage.create_point_constraint(stage.get_prop(arm_h).body, stage.get_scenery(rotator_target_h).body, noob::vec3f(0.0, 0.0, 50.0), noob::vec3f(0.0, 0.0, 0.0));	
-// noob::prop_blueprints cup_bottom_bp;
-// cup_bottom_bp.mass = 1.0;
-// cup_bottom_bp.shape = g.box_shape(10.0, 1.0, 10.0);
-// cup_bottom_bp.model = g.model_from_shape(cup_bottom.shape);
-// cup_bottom_bp.reflect = g.get_reflectance("default");
-// cup_bottom_bp.ccd = false;
-
-
-// Create pivot-joint
-// noob::constraint_handle pivot_h = stage.create_hinge_constraint();
-}	
- */	
-
-
-void create_rocket(const noob::vec3f & pos, const noob::versorf & orient)
+void create_rocket(const noob::vec3f & pos, const noob::versorf & orient, noob::stage& stage, noob::globals& g)
 {
 	// Make long cylinder, (and boosters?)
+	const size_t rocket_motor_count = 1;
+	const float rocket_motor_height = 12.0;
+	const float rocket_motor_radius = 3.0;
+	const noob::vec3f rocket_motor_pos(pos);
+	const noob::versorf rocket_motor_orient(0.0,0.0,0.0,1.0);
+	noob::actor_blueprints rocket_motor_bp;
+	rocket_motor_bp.bounds = g.cylinder_shape(rocket_motor_radius, rocket_motor_height, 12);
+	rocket_motor_bp.model = g.model_from_shape(rocket_motor_bp.bounds, 1);
+	rocket_motor_bp.reflect = g.get_reflectance("default");
+
+	noob::actor_blueprints_handle rocket_motor_bp_h = stage.add_actor_blueprints(rocket_motor_bp);
+	stage.reserve_actors(rocket_motor_bp_h, rocket_motor_count);
+	noob::actor_handle rocket_motor_h = stage.create_actor(rocket_motor_bp_h, 0, rocket_motor_pos, rocket_motor_orient);
 
 	// Make capped cones for top to make it look real
+
+	const noob::vec3f rocket_cap_1_pos = pos + (0.0, 0.0, 0.0);
+	// const noob::vec3f rocket_cap_2_pos = ;
+	
+	//rocket_cap_bp.bounds = g.cone_
+	
+
 
 	// Make stabilizers (less important than the rest, as they are purely decorative)
 
 	// Add triggers for firing
 }
 
-/*
-void create_cannon(const noob::vec3f & pos, noob::stage & stage, noob::globals & g)
-o
-{
-	const noob::versorf orient = noob::versorf(0., 0., 0., 1.);
-	const float PI = 3.1415926;
-	const float bore_radius = 10.0;
-	const float cannon_length = 30.0;	
-	const float segment_radius = 1.5;
-	const size_t segment_count = 12;
-	const float sector_step = 2.0 * PI / (static_cast<float>(segment_count));
-	const float cap_thickness = 5.0;
-
-	float sector_angle; 
-	
-	std::vector<noob::prop_handle> cannon_parts; 
-	// Cylindrical segments
-	noob::prop_blueprints segment_bp;
-	segment_bp.mass = 100.0;
-	segment_bp.shape = g.cylinder_shape(segment_radius, cannon_length, 12);
-	segment_bp.model = g.model_from_shape(segment_bp.shape, 12);
-	segment_bp.reflect = g.get_reflectance("default");
-	segment_bp.ccd = true;
-
-	noob::prop_blueprints_handle segment_bp_h = stage.add_props_blueprints(segment_bp);
-	stage.reserve_props(segment_bp_h, segment_count);
-	for (size_t i = 0; i < segment_count; ++i)
-	{
-		sector_angle = static_cast<float>(i) * sector_step;
-		cannon_parts.push_back(stage.create_prop(segment_bp_h, 0, pos + noob::vec3f(bore_radius * std::cos(sector_angle), bore_radius * std::sin(sector_angle), 0.0), noob::versorf(0.0, 0., 0., 1.)));
-	}
-
-	// Cap the non-firing end of the cannon with a cylinder of appropriate width
-	noob::prop_blueprints cap_bp;
-	cap_bp.mass = 500.0;
-	cap_bp.shape = g.cylinder_shape(bore_radius, cap_thickness, 12);
-	cap_bp.model = g.model_from_shape(cap_bp.shape, 1);
-	cap_bp.reflect = g.get_reflectance("default");
-	cap_bp.ccd = true;
-
-	noob::prop_blueprints_handle cap_bp_h = stage.add_props_blueprints(cap_bp);
-	stage.reserve_props(cap_bp_h, 1);
-	cannon_parts.push_back(stage.create_prop(cap_bp_h, 0, pos + noob::vec3f(0., 0., (cannon_length - cap_thickness)), orient));
-
-	cannon_h = stage.create_assembly(pos, orient, true, cannon_parts);
-
-
-
-	// Add a big ole' cannonball
-
-	// Add triggers for firing
-}
-*/
 
 bool noob::application::user_init()
 {
@@ -457,20 +324,19 @@ bool noob::application::user_init()
 	// b.set_linear_factor(noob::vec3f(1.0, 1.0, 0.0));
 	//time_since_last_drop += ball_drop_interval;
 
-//	create_wrecking_ball(noob::vec3f(150.0, 0.0, -200.0), 100, stage, g);
-//
-//	create_slide(stage, g);
+	// create_wrecking_ball(noob::vec3f(-150.0, 200.0, 0.0), 50, stage, g);
+	//
+	//	create_slide(stage, g);
 
 
-//	noob::constraint_handle wrecking_ball_constraint_h = stage.create_fixed_constraint(stage.get_scenery(wrecking_ball_fixed_to).body, stage.get_prop(wrecking_ball_h).body, noob::translate(noob::identity_mat4<float>(), noob::vec3f(100.0, 0.0, 0.0)), noob::identity_mat4<float>());
-//	noob::constraint wrecking_ball_constraint = stage.get_constraint(wrecking_ball_constraint_h);
+	//	noob::constraint_handle wrecking_ball_constraint_h = stage.create_fixed_constraint(stage.get_scenery(wrecking_ball_fixed_to).body, stage.get_prop(wrecking_ball_h).body, noob::translate(noob::identity_mat4<float>(), noob::vec3f(100.0, 0.0, 0.0)), noob::identity_mat4<float>());
+	//	noob::constraint wrecking_ball_constraint = stage.get_constraint(wrecking_ball_constraint_h);
 
 
-	create_brick_wall(noob::vec3f(300., -440., -500.), noob::vec3f(10., 10., 10.), 5.0, noob::vec2f(30, 10), stage, g);
+	create_brick_wall(noob::vec3f(0., 20., -500.), noob::vec3f(10., 10., 10.), 5.0, noob::vec2f(30, 10), stage, g);
 
 
-
-
+	noob::body b = stage.get_body(stage.get_prop(cannonball_h).body);
 
 	logger::log(noob::importance::INFO, "[Application] Successfully done (C++) user init.");
 	paused = false;
@@ -490,9 +356,15 @@ void noob::application::user_update(double dt)
 	//	logger::log(noob::importance::INFO, "[UserApp] Dropping a ball");
 	const uint64_t profiling_interval = 3000;
 
-	noob::body b = stage.get_body(stage.get_prop(wrecking_ball_h).body);
+	noob::body b = stage.get_body(stage.get_prop(cannonball_h).body);
 	// TESTING b.apply_impulse(noob::vec3f(0.0, 0.0, 50.0), noob::vec3f(0.0, 0.0, -7.0));
+	static size_t temp_counter = 0;
+	if (temp_counter < 1)
+	{
+		b.apply_impulse(noob::vec3f(0.0, 100.0, -5000.0), noob::vec3f(0.0,-0.10,-10.0));
 
+		temp_counter++;
+	}
 	if (noob::millis(time_since_update) > profiling_interval - 1)
 	{
 		const noob::profiler_snap snap = g.profile_run;
@@ -507,3 +379,59 @@ void noob::application::user_update(double dt)
 		last_ui_update = nowtime;
 	}
 }
+
+
+
+
+/*
+void create_wrecking_ball(const noob::vec3f &pos, size_t chain_length, noob::stage &stage_arg, noob::globals &g)
+{
+	noob::scenery_handle fixture_h = stage_arg.create_scenery(g.box_shape(1.0, 1.0, 1.0), pos, noob::versorf(0.0, 0.0, 0.0, 1.0));
+
+	noob::prop_blueprints chain_link_bp;
+	chain_link_bp.mass = 5.0;
+	chain_link_bp.shape = g.sphere_shape(0.4);
+	chain_link_bp.model = g.model_from_shape(chain_link_bp.shape, chain_length);
+	chain_link_bp.reflect = g.get_reflectance("default");
+	chain_link_bp.ccd = false;
+
+	noob::prop_blueprints_handle chain_link_h = stage_arg.add_props_blueprints(chain_link_bp);
+	stage_arg.reserve_props(chain_link_h, chain_length);
+	noob::body_handle last_bod = stage_arg.get_scenery(fixture_h).body;
+
+	float y_accum = static_cast<float>(chain_length);
+	for (uint32_t i = 0; i < chain_length; ++i)
+	{
+		y_accum -= 1.0;
+
+		noob::prop_handle ph = stage_arg.create_prop(chain_link_h, 0, pos + noob::vec3f(0.0, y_accum, 0.0), noob::versorf(0.0, 0.0, 0.0, 1.0));
+
+		noob::body_handle current_bod = stage_arg.get_prop(ph).body;
+		//noob::constraint_handle twisty_h = stage.create_point_constraint(current_bod, last_bod, noob::identity_mat4<float>(), noob::identity_mat4<float>());
+
+		noob::constraint_handle twisty_h = stage_arg.create_point_constraint(current_bod, last_bod, noob::vec3f(0.0, -0.5, 0.0), noob::vec3f(0.0, 0.5, 0.0));
+
+		//noob::constraint twisty = stage.get_constraint(twisty_h);
+		last_bod = current_bod;
+	}
+
+	noob::shape_handle large_sphere_shp = g.sphere_shape(7.0);
+	noob::prop_blueprints wrecking_ball_bp;
+	wrecking_ball_bp.mass = 100.0;
+	wrecking_ball_bp.shape = large_sphere_shp;
+	wrecking_ball_bp.model = g.model_from_shape(large_sphere_shp, 1);
+	wrecking_ball_bp.reflect = g.get_reflectance("default");
+	wrecking_ball_bp.ccd= true;
+
+	auto wrecking_ball_bp_h = stage_arg.add_props_blueprints(wrecking_ball_bp);
+	stage_arg.reserve_props(wrecking_ball_bp_h, 1);
+
+	wrecking_ball_h = stage_arg.create_prop(wrecking_ball_bp_h, 0, pos + noob::vec3f(0.0, -7.0, 0.0), noob::versorf(0.0, 0.0, 0.0, 1.0));
+	auto wrecking_ball_bod = stage_arg.get_prop(wrecking_ball_h).body;
+	// auto constrain_h = stage_arg.create_conical_constraint(wrecking_ball_bod, last_bod, noob::translate(noob::identity_mat4<float>(), noob::vec3f(0.0, 7.0, 0.0)), noob::translate(noob::identity_mat4<float>(), noob::vec3f(0.0, -0.5, 0.0)));
+	auto constrain_h = stage_arg.create_point_constraint(wrecking_ball_bod, last_bod, noob::vec3f(0.0, 7.0, 0.0), noob::vec3f(0.0, -0.5, 0.0));
+}
+*/
+
+
+
